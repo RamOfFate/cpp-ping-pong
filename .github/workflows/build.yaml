@@ -1,0 +1,64 @@
+name: Cross-Platform Build and Release
+
+on:
+  push:
+    tags:
+      - "v*" # Trigger only when you push a tag starting with 'v' (e.g., v1.0)
+  workflow_dispatch: # Allows you to run this manually from the Actions tab
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # --- WINDOWS SETUP & COMPILATION ---
+      - name: Setup MSVC (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Raylib (Windows)
+        if: matrix.os == 'windows-latest'
+        run: vcpkg install raylib:x64-windows-static
+
+      - name: Compile (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cl.exe /EHsc /O2 src/main.cpp /I C:\vcpkg\installed\x64-windows-static\include /link /LIBPATH:C:\vcpkg\installed\x64-windows-static\lib raylib.lib User32.lib Gdi32.lib Winmm.lib Shell32.lib /OUT:Pong-Win.exe
+
+      # --- LINUX SETUP & COMPILATION ---
+      - name: Install Dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev
+
+      - name: Install Raylib (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          git clone --depth 1 https://github.com/raysan5/raylib.git raylib
+          cd raylib/src
+          make PLATFORM=PLATFORM_DESKTOP
+          sudo make install
+
+      - name: Compile (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          g++ src/main.cpp -o Pong-Linux -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+
+      # --- THE RELEASE STEP ---
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            Pong-Win.exe
+            Pong-Linux
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
