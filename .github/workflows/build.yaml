@@ -30,7 +30,11 @@ jobs:
       - name: Compile (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          cl.exe /EHsc /O2 src/main.cpp /I C:\vcpkg\installed\x64-windows-static\include /link /LIBPATH:C:\vcpkg\installed\x64-windows-static\lib raylib.lib User32.lib Gdi32.lib Winmm.lib Shell32.lib /OUT:Pong-Win.exe
+          cl.exe /EHsc /std:c++17 /O2 src/main.cpp `
+          /I C:\vcpkg\installed\x64-windows-static\include `
+          /link /LIBPATH:C:\vcpkg\installed\x64-windows-static\lib `
+          raylib.lib User32.lib Gdi32.lib Winmm.lib Shell32.lib `
+          /OUT:Pong-Win.exe
 
       # --- LINUX SETUP & COMPILATION ---
       - name: Install Dependencies (Linux)
