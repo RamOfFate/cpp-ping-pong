@@ -4,6 +4,7 @@
 #include <string>
 #include <ctime>
 
+//even though it makes sense to have the screen size be an int, I thought it'll be better to have it as a float to avoid converting it for operations later
 constexpr float SCREEN_WIDTH = 800.0f;
 constexpr float SCREEN_HEIGHT = 450.0f;
 
@@ -19,7 +20,7 @@ struct Paddle {
     Vector2 size = {15.0f, 150.0f};
     Vector2 position;
     float speed = DEFAULT_BALL_SPEED;
-
+// the position is set in the initialiser sonthe value are set alongside creating the object instead of after it
     Paddle(bool isLeftPaddle = true) :position
         {
             isLeftPaddle ? PADDING: SCREEN_WIDTH - PADDING - size.x, 
@@ -29,7 +30,7 @@ struct Paddle {
     void Draw() const{
         DrawRectangleV(position, size, WHITE);
     }
-
+//from what I understand it's common practice in game dev to set the direction as a number -1, 0, 1 for moving up and down or stopping when the player is pressing both buttons simultaneously 
     void Move(float dir, float dt){
         position.y += dir * speed * dt;
         position.y = std::clamp(position.y, PADDING, SCREEN_HEIGHT - size.y - PADDING);
@@ -65,7 +66,7 @@ struct Ball {
         speed = {0, 0};
         position = {SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f};
     }
-
+// it's better for the player experience to have the ball start at a random direction for fairness 
     void Launch(){
         float direction_x = (GetRandomValue(0, 1) == 0) ? -1.0f : 1.0f;
         float direction_y = (GetRandomValue(0, 1) == 0) ? -1.0f : 1.0f;
@@ -76,10 +77,12 @@ struct Ball {
 
 
 int main(){
+//so the ball direction at Launch() won't be the same whenever the game is close and reopened
     SetRandomSeed(time(0));
-    InitWindow(static_cast<int>(SCREEN_WIDTH), static_cast<int>(SCREEN_HEIGHT), "My first game of ping pong :>");
+   //InitWindow does conver float values fo int if it needs to but I learned it's better if I convert it first with static_cast
+InitWindow(static_cast<int>(SCREEN_WIDTH), static_cast<int>(SCREEN_HEIGHT), "My first game of ping pong :>");
     SetTargetFPS(60);
-
+//boolean value decides if it's player a or b
     Paddle paddle_a, paddle_b(false);
 
     Ball ball;
@@ -87,6 +90,7 @@ int main(){
     int score_a = 0, score_b = 0;
 
     while(!WindowShouldClose()){
+//this assures the games run the same despite the refresh rate, it's not a big deal since both player are on the same machine but it's generally a good practice 
         float delta_time = GetFrameTime();
         
         float direction_a = static_cast<float>(IsKeyDown(KEY_S)) - static_cast<float>(IsKeyDown(KEY_W));
@@ -99,7 +103,7 @@ int main(){
         
         ball.Update(delta_time);
 
-        if(CheckCollisionCircleRec(ball.position, ball.radius, paddle_a.getRectangle())){
+//this is the basic eay to check for collisions, it works fine but I feel like I can come up with a better alternative    if(CheckCollisionCircleRec(ball.position, ball.radius, paddle_a.getRectangle())){
             if (ball.speed.x < 0) ball.speed.x *= BALL_ACCELERATION; 
         }
         
@@ -120,6 +124,7 @@ int main(){
 
         BeginDrawing();
         ClearBackground(BLACK);
+//since RayLib is made in C and C++ meaning DrawText requires char* instead of string so I formated the score into a string buffer
         DrawText(TextFormat("%d", score_a), static_cast<int>(SCREEN_WIDTH) / 2 - MeasureText(TextFormat("%d", score_a), FONT_SIZE) - PADDING, PADDING, FONT_SIZE, WHITE);
         DrawText(TextFormat("%d", score_b), static_cast<int>(SCREEN_WIDTH) / 2 + PADDING, PADDING, FONT_SIZE, WHITE);
         paddle_a.Draw();
